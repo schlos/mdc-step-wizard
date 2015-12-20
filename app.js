@@ -8,10 +8,12 @@ $(document).ready(function() {
 	var municipality; 
 	var addressDisplay;
 	
-	//don't think I'm using these
-	var currentNode;
+	var currentNode = 0;
+	
+	//don't think I'm using these 
 	var sections = [];
 	
+	//loader options
 	var opts = {
 		  lines: 11 // The number of lines to draw
 		, length: 0 // The length of each line
@@ -35,24 +37,7 @@ $(document).ready(function() {
 		, position: 'absolute' // Element positioning
 	}
 	
-	
-	
-	function labelSections() {
-		
-		$('section').each(function() {
-			
-			sections.push(this);
-					
-		})
-		
-		for(var i = 0; i < sections.length; i++) {
-			
-			var attr = i.toString() + '-section';
-			$(sections[i]).addClass(attr);
-			//console.log(i, 'labeling', attr);
-		}
-	}
-	
+	//initialize geo stuff
 	function initialize() {
 	
 	   geocoder = new google.maps.Geocoder();
@@ -60,22 +45,71 @@ $(document).ready(function() {
 	   
 	}
 
-  	initialize();
-	//labelSections();
+  initialize();
 	
 	//button states
 	$('.button').click(function(e) {
 		
 		e.preventDefault();
-		showModules($(this).attr('id'));	
-		buttonReset($(this).attr('id'));
-		$(this).addClass('active');
 		
+		currentNode = parseInt($(this).closest('section').attr('class').split(' ')[0]);
+		resetSubsequentNodes(currentNode);
+		
+		showModules($(this).attr('id'));	
+		
+		//of all the messy ways to implement a stupid toggle.
+		var health_buttons = ['health-restroom', 'health-tanks', 'health-foodtrucks', 'health-foodsales'];
+		
+		if($(this).attr('id').split('-')[0] == 'health' && $(this).attr('id') != 'health-none') {
+			
+			$(this).addClass('active');
+			buttonReset('health-none');
+			
+		} else if($(this).attr('id') == 'health-none') {
+			
+			for(var i = 0; i < health_buttons.length; i++) {
+				
+				buttonReset(health_buttons[i]);
+				
+			}
+			
+			$(this).addClass('active');
+			
+		} else {
+			
+			buttonReset($(this).attr('id'));
+			$(this).addClass('active');
+
+		}
+				
 	})
 	
-	$("span#input-address").keyup(function(event){
+	//hide all subsequent sections from the current one
+	//in case a user backs way up and changes an answer
+	function resetSubsequentNodes(node) {
+		
+		$('section').each(function() {
+			
+			var nextNode = parseInt($(this).attr('class').split(' ')[0]);
+			
+			if(node < nextNode) {
+				
+				$(this).addClass('hidden');
+				$(this).find('.button').each(function() {
+				
+					buttonReset($(this).attr('id'));
+					
+				})
+
+			}
+			
+		})
+	}	
+	
+	$("#address").keypress(function(event){
 	    if(event.keyCode == 13){
 	        $("#submit-address").click();
+            return false;
 	    }
 	});
 
@@ -91,35 +125,26 @@ $(document).ready(function() {
 		})
 	}
 	
-	function reset(nodes) {
-		
-		for(var i = 0; i < nodes.length; i++) {
-			
-			$(nodes[i]).addClass('hidden');
-			$(nodes[i] + ' .button').removeClass('active');
-		}
-		
-		
-	}
-	
-	function setCurrentNode(id) {
-		
-		console.log($('div' + id).closest('section'));
-		
-	}
-	
 	function resetFinishers() {
 		
 		$('.finished').addClass('hidden');	
 	}
 	
 	function showHide(showThese, hideThose) {
-		//console.log('show this:', showThese);
-		//console.log('hide this:', hideThose);
 		
 		for(var i = 0; i < showThese.length; i++) {
 			
 			$(showThese[i]).removeClass('hidden');
+		
+			var showMe = $(showThese[i]).attr('id').toString().split('-')[0];
+			
+			console.log(showMe);
+			
+			if(showMe == 'finished'){
+				
+				$('#finished-print').removeClass('hidden');
+			
+			}
 		}
 		
 		for(var i = 0; i < hideThose.length; i++) {
@@ -134,7 +159,6 @@ $(document).ready(function() {
 		console.log('show module: ', buttonID);
 		
 		resetFinishers();
-		setCurrentNode('#' + buttonID);
 		
 		switch(buttonID) {
 			
@@ -181,22 +205,17 @@ $(document).ready(function() {
 				
 			case 'umsa-yes':
 				
-				reset(['#public-with-structures', '#certificate-of-use', '#street-closure', '#special-types', '#health']);
 				showHide(['#public-with-structures'], [])
 				break;
 				
 			case 'umsa-no':
 			
-				reset(['#county-parks', '#public-with-structures', '#certificate-of-use', '#street-closure', '#special-types', '#health']);
 				showHide(['#finished-do-not-apply'], [])
-				console.log("END THE WIZARD");
 				break;
 			
 			case 'umsa-notSure':
 			
-				reset(['#public-with-structures', '#certificate-of-use', '#street-closure', '#special-types', '#health']);
 				showHide(['#finished-not-sure'], [])
-				console.log("END THE WIZARD");
 				break;
 					
 			case 'submit-address':
@@ -232,7 +251,6 @@ $(document).ready(function() {
 			
 			case 'structure-whatIs':
 			
-				console.log("what is a temporary structure?");
 				showHide(['#temporary-structure-definition'],[]);
 				break;
 			
@@ -302,7 +320,6 @@ $(document).ready(function() {
 				showHide(['#health', 'div#type-carnival'],['div#type-sale', 'div#type-assembly', 'div#type-sparkler']);
 				break;
 				
-				
 			case 'type-assembly':
 			
 				showHide(['#health', 'div#type-assembly'],['div#type-sale','div#type-carnival', 'div#type-sparkler']);
@@ -315,22 +332,22 @@ $(document).ready(function() {
 				
 			case 'health-restroom':
 			
-				showHide(['div#health-restroom','#finished-success'],['div#health-foodsales','div#health-foodtrucks','div#health-none']);
+				showHide(['div#health-restroom','#finished-success'],['div#health-none']);
 				break;
 				
 			case 'health-tanks':
 			
-				showHide(['div#health-restroom','#finished-success'],['div#health-foodsales','div#health-foodtrucks','div#health-none']);
+				showHide(['div#health-restroom','#finished-success'],['div#health-none']);
 				break;
 				
 			case 'health-foodtrucks':
 			
-				showHide(['div#health-foodtrucks','#finished-success'],['div#health-restroom','div#health-foodsales','div#health-none']);
+				showHide(['div#health-foodtrucks','#finished-success'],['div#health-none']);
 				break;
 			
 			case 'health-foodsales':
 			
-				showHide(['div#health-foodsales','#finished-success'],['div#health-restroom','div#health-foodtrucks','div#health-none']);
+				showHide(['div#health-foodsales','#finished-success'],['div#health-none']);
 				break;
 				
 			case 'health-none':
@@ -345,6 +362,8 @@ $(document).ready(function() {
 			
 		}
 	}
+	
+	/******************* GEOCODING ********************/
 	
 	function codeAddress(address) {
 		
@@ -370,9 +389,9 @@ $(document).ready(function() {
 			    //console.log("RESULTS");
 			    //console.log(results);
 			    
-			    lat = results[0].geometry.location.A;
-				lng = results[0].geometry.location.F;
-				console.log(lat, lng);
+			    lat = results[0].geometry.location.lat();
+			    lng = results[0].geometry.location.lng();
+			    console.log(lat, lng);
 				
 				var latlng = new google.maps.LatLng(lat,lng);
 				var mapOptions = {
@@ -512,19 +531,35 @@ $(document).ready(function() {
 			showModules('umsa-yes');
 		}
 		
-		//$('#county-parks').removeClass('hidden');
-		
 		$('#address-value .value').html(txt);
 	}
 	
-	function showFinished() {
-		
-		$('.finished').each(function() {
-			
-			console.log('hiding finished');
-			$(this).addClass('hidden');
-		})
-	}
+	/******************* HAPPY PDF-ING ********************/
 	
+	$('#print').click(function() {
+		
+		var appended = 0; 
+		
+		$('#test-pdf').prepend("<h4>This is a record of your STEP information.</h4>")
+				
+		$('.module').each(function() {
+			
+			if($(this).hasClass('hidden') == false ) {
+				
+				$('#test-pdf').prepend($(this));
+				appended++;
+			}
+			
+		})
+		
+		if(appended == 0) {
+			
+			$('#test-pdf').append("It looks like we don't have any information specific to your case. ");
+		}
+		
+		return xepOnline.Formatter.Format('test-pdf', {render:'newwin'});
+			
+	})
+		
 	
 }) //close ready
