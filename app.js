@@ -162,27 +162,27 @@ $(document).ready(function() {
 		
 		switch(buttonID) {
 			
-			case 'public-yes':
+			case 'info-da':
 			
-				showHide(['#county-parks'], ['#ticket-sales']);
+				showHide(['#vrsta'], ['#info']);
 				break;
 				
-			case 'public-no':
+			case 'info-ne':
 			
 				showHide(['#ticket-sales'], ['#county-parks','#geolocator', '#address', '#public-with-structures', '#certificate-of-use', '#street-closure', '#special-types', '#health']);
 				break;
 			
-			case 'tickets-yes':
+			case 'vrsta-pristupinfo':
 			
-				showHide(['#county-parks'], ['#finished-not-public']);
+				showHide(['#vrsta'], ['#pristupinfo'];
 				break;
 				
-			case 'tickets-no':
+			case 'vrsta-ponovnauporaba':
 				
 				showHide(['#finished-not-public'], ['#geolocator']);
 				break;
 				
-			case 'address-yes':
+			case 'pristupinfo-da':
 				
 				showHide(['form#address'], ['#no-address', '#umsa', '#county-parks']);
 				break;
